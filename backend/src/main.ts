@@ -1,18 +1,37 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const config = app.get(ConfigService);
 
-  // Allow the Vite dev server (different port) to call this API
-  app.enableCors({ origin: 'http://localhost:5173' });
+  const extraOrigins =
+    config.get<string>('ALLOWED_ORIGINS')?.split(',').map((o) => o.trim()) ??
+    [];
 
-  // Validate all incoming request bodies against their DTOs
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (
+        !origin ||
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('chrome-extension://') ||
+        extraOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app')
+      ) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true }),
   );
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = config.get<number>('PORT', 3000);
+  await app.listen(port);
 }
 bootstrap();

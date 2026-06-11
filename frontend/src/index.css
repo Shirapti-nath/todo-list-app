@@ -33,3 +33,22 @@ body {
   margin: 0;
   min-height: 100vh;
 }
+
+/* Browser extension popup layout */
+html.extension-popup,
+html.extension-popup body {
+  width: 400px;
+  min-height: 520px;
+  max-height: 600px;
+  overflow: hidden;
+}
+
+html.extension-popup body {
+  background: #f4f5f8;
+}
+
+@media (prefers-color-scheme: dark) {
+  html.extension-popup body {
+    background: #181923;
+  }
+}

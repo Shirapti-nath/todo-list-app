@@ -11,18 +11,30 @@ import { Todo } from './todos/todo.entity';
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get<string>('DB_HOST', 'localhost'),
-        port: config.get<number>('DB_PORT', 5432),
-        username: config.get<string>('DB_USERNAME'),
-        password: config.get<string>('DB_PASSWORD', ''),
-        database: config.get<string>('DB_NAME', 'tododb'),
-        entities: [Todo],
-        // Auto-creates/updates tables from entities. Dev only — use
-        // migrations in production.
-        synchronize: true,
-      }),
+      useFactory: (config: ConfigService) => {
+        const databaseUrl = config.get<string>('DATABASE_URL');
+
+        if (databaseUrl) {
+          return {
+            type: 'postgres' as const,
+            url: databaseUrl,
+            ssl: { rejectUnauthorized: false },
+            entities: [Todo],
+            synchronize: true,
+          };
+        }
+
+        return {
+          type: 'postgres' as const,
+          host: config.get<string>('DB_HOST', 'localhost'),
+          port: config.get<number>('DB_PORT', 5432),
+          username: config.get<string>('DB_USERNAME'),
+          password: config.get<string>('DB_PASSWORD', ''),
+          database: config.get<string>('DB_NAME', 'tododb'),
+          entities: [Todo],
+          synchronize: true,
+        };
+      },
     }),
     TodosModule,
   ],
